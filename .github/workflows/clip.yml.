@@ -1,0 +1,45 @@
+name: Clip video
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Video link (YouTube etc.)"
+        required: true
+      clips:
+        description: "How many clips"
+        default: "5"
+
+jobs:
+  clip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Install ffmpeg and font
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
+
+      - name: Install Python packages
+        run: pip install -r requirements.txt
+
+      - name: Make clips
+        env:
+          VIDEO_URL: ${{ inputs.url }}
+          NUM_CLIPS: ${{ inputs.clips }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          YT_COOKIES: ${{ secrets.YT_COOKIES }}
+        run: python clip.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clips
+          path: clips/
